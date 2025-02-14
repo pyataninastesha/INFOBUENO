@@ -10,6 +10,7 @@ from models.question import Question  # Модель вопросов
 from models.test import Test  # Модель тестов
 from forms.forms import RegistrationForm, LoginForm
 import random
+import os
 
 
 app = Flask(__name__)
@@ -271,7 +272,5 @@ def serve_image(filename):
     return send_from_directory("static/images", filename)
 
 
-
-
 if __name__ == '__main__':
-    app.run(debug=True, port=5008)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5008)))
