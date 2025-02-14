@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Flask App{% endblock %}</title>
+    <style>
+        /* Основной стиль для body */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: url("{{ url_for('static', filename='images/background.jpg') }}") no-repeat center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+        }
+
+        /* Контейнер для содержимого */
+        .container {
+            margin-top: 20%;
+        }
+
+        /* Стиль для кнопок */
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 10px 20px;
+            color: white;
+            background-color: #0056b3;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #003f7f;
+        }
+
+        /* Основной контейнер для форм */
+        .form-container {
+            max-width: 400px;
+            margin: 10% auto;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Заголовки */
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        /* Группы форм */
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+
+        /* Поля ввода */
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            border-color: #0056b3;
+            outline: none;
+        }
+
+        /* Сообщения об ошибках */
+        .error {
+            color: red;
+            font-size: 12px;
+        }
+
+        .error-messages {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+        }
+
+        .error-messages li {
+            color: red;
+            font-size: 14px;
+        }
+
+        /* Ссылки */
+        .link {
+            color: #80d4ff;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>
