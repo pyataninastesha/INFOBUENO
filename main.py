@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.secret_key = "secret_key"
 
 # Инициализация базы данных
-global_init("")
+global_init("db/database.db")
 
 
 @app.route('/')

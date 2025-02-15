@@ -1,27 +1,35 @@
-import os
-from sqlalchemy import create_engine, orm
+import sqlalchemy as sa
+import sqlalchemy.orm as orm
+from sqlalchemy.orm import Session  # Соединение с базой данных
 from sqlalchemy.ext.declarative import declarative_base
 
-# Получаем URL базы данных из переменных окружения
-database_url = os.getenv("DATABASE_URL")
 
-# Если DATABASE_URL отсутствует, используем локальную SQLite
-if not database_url:
-    database_url = "sqlite:///db/database.db"
+SqlAlchemyBase = declarative_base()  # Объявление базы данных
+__factory = None
 
-# Fix для SQLAlchemy (если PostgreSQL, заменяем "postgres://" на "postgresql://")
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://")
 
-# Создаем подключение к базе данных
-engine = create_engine(database_url)
-SessionLocal = orm.sessionmaker(bind=engine)
+def global_init(db_file):
+    global __factory
 
-Base = declarative_base()
+    if __factory:
+        return
 
-def create_session():
-    return SessionLocal()
+    if not db_file or not db_file.strip():
+        raise Exception("Необходимо указать файл базы данных.")
 
-def global_init():
-    """Инициализация базы данных"""
-    Base.metadata.create_all(engine)
+    conn_str = f'sqlite:///{db_file.strip()}?check_same_thread=False'
+    print(f"Подключение к базе данных по адресу {conn_str}")
+
+    engine = sa.create_engine(conn_str, echo=False)
+    __factory = orm.sessionmaker(bind=engine)
+
+    from models import user  # Импорт моделей
+
+    SqlAlchemyBase.metadata.create_all(engine)
+
+
+def create_session() -> Session:
+    global __factory
+    if __factory is None:
+        raise Exception("База данных не инициализирована. Вызовите global_init() перед использованием.")
+    return __factory()
