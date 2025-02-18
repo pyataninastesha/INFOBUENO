@@ -1,5 +1,3 @@
-import base64
-
 from flask import Flask, render_template, redirect, flash, url_for, request, jsonify, send_from_directory
 from flask import session as flask_session
 from db_session import global_init, create_session
@@ -11,12 +9,13 @@ from models.test import Test  # Модель тестов
 from forms.forms import RegistrationForm, LoginForm
 import random
 import os
+import base64
 
 
 app = Flask(__name__)
 app.secret_key = "secret_key"
 
-# Инициализация базы данных
+# инициализация базы данных
 global_init("db/database.db")
 
 
@@ -122,14 +121,12 @@ def get_questions():
             task_data = None
             task_type = q.task_type
 
-            # Обработка задания
             if task_type == 'text':
                 task_data = q.task.decode('utf-8') if isinstance(q.task, bytes) else q.task
             elif task_type == 'image':
                 if q.task_blob:
                     task_data = base64.b64encode(q.task_blob).decode('utf-8')
 
-            # Обработка ответа
             answer_data = q.answer.decode('utf-8') if isinstance(q.answer, bytes) else q.answer
 
             questions_data.append({
@@ -144,8 +141,6 @@ def get_questions():
         return jsonify({"error": str(e)}), 500
 
 
-import base64  # Добавьте импорт в начале файла
-
 @app.route('/api/test', methods=['GET'])
 def generate_test():
     subject_id = request.args.get('subject_id', type=int)
@@ -157,7 +152,7 @@ def generate_test():
     questions = session.query(Question).filter(Question.topic_id == topic_id).all()
     if not questions:
         return jsonify({"error": "Нет вопросов для данной темы"}), 404
-    random_questions = random.sample(questions, min(len(questions), 5))  # Берем 5 случайных вопросов
+    random_questions = random.sample(questions, min(len(questions), 5))  # генерация 5 случайных вопросов
 
     questions_data = []
     for q in random_questions:
@@ -165,7 +160,7 @@ def generate_test():
         if q.task_type == 'text':
             task_data = q.task.decode('utf-8') if isinstance(q.task, bytes) else q.task
         elif q.task_type == 'image' and q.task_blob:
-            task_data = base64.b64encode(q.task_blob).decode('utf-8')  # Кодируем изображение в base64
+            task_data = base64.b64encode(q.task_blob).decode('utf-8')  # перекодировка изображений
 
         questions_data.append({
             "id": q.id,
@@ -182,7 +177,7 @@ def submit_test():
     answers = data.get('answers', {})
     topic_id = data.get('topicId')
     subject_id = data.get('subjectId')
-    user_id = 1  # Предположим, что пользователь залогинен, и его ID = 1 (для теста)
+    user_id = 1
 
     session = create_session()
     questions = session.query(Question).filter(Question.id.in_(answers.keys())).all()
@@ -201,7 +196,7 @@ def submit_test():
             "correctAnswer": question.answer.strip().lower()
         })
 
-    # Запись результата теста в базу данных
+    # запись результата тестов в базу данных
     test_result = Test(user_id=user_id, topic_id=topic_id, score=correct_count)
     session.add(test_result)
     session.commit()
@@ -209,7 +204,7 @@ def submit_test():
     return jsonify({
         "correctCount": correct_count,
         "totalQuestions": len(questions),
-        "results": results  # Возвращаем информацию о каждом ответе
+        "results": results
     })
 
 
@@ -220,18 +215,14 @@ def get_user():
         return jsonify({"error": "User not logged in"}), 401
 
     try:
-        # Создаем сессию базы данных
         db_session = create_session()
 
-        # Убедимся, что user_id преобразуется в целое число
         user_id = int(user_id)
 
-        # Получаем данные пользователя
         user = db_session.query(User).filter(User.id == user_id).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Формируем данные для ответа
         user_data = {"id": user.id, "username": user.username}
         return jsonify(user_data)
 
@@ -251,12 +242,10 @@ def get_tests():
         user_id = int(user_id)
         session = create_session()
 
-        # Запрашиваем тесты пользователя с соединением с таблицей topics
         tests = session.query(Test).join(Topic).filter(Test.user_id == user_id).all()
 
-        # Формируем данные для ответа
         test_data = [
-            {"test_name": test.topic.name, "result": test.score}  # Исправлено result -> score
+            {"test_name": test.topic.name, "result": test.score}
             for test in tests
         ]
         return jsonify(test_data)
@@ -272,5 +261,11 @@ def serve_image(filename):
     return send_from_directory("static/images", filename)
 
 
+@app.route('/logout', methods=['POST'])
+def logout():
+    flask_session.clear()  # очистка сессии для выхода
+    return redirect(url_for('login'))
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5008)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5008)))

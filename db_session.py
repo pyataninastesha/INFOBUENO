@@ -1,10 +1,10 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy.orm import Session  # Соединение с базой данных
+from sqlalchemy.orm import Session  # соединение с базой данных
 from sqlalchemy.ext.declarative import declarative_base
 
 
-SqlAlchemyBase = declarative_base()  # Объявление базы данных
+SqlAlchemyBase = declarative_base()  # объявление базы данных
 __factory = None
 
 

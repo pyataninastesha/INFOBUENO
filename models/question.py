@@ -9,9 +9,9 @@ class Question(SqlAlchemyBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     topic_id = Column(Integer, ForeignKey('topics.id'), nullable=False)
     subject_id = Column(Integer, ForeignKey('subjects.id'), nullable=False)
-    task_type = Column(String, nullable=True)  # text or image
-    task = Column(Text, nullable=True)        # for text-based tasks
-    task_blob = Column(BLOB, nullable=True)   # for image-based tasks
+    task_type = Column(String, nullable=True)
+    task = Column(Text, nullable=True)
+    task_blob = Column(BLOB, nullable=True)
     answer = Column(String, nullable=False)
 
     topic = relationship("Topic", back_populates="questions")
