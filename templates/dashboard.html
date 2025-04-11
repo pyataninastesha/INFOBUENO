@@ -507,74 +507,78 @@
         }
 
 
-        function loadTest(subjectId, topicId) {
-            fetch(`/api/test?subject_id=${subjectId}&topic_id=${topicId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const contentArea = document.getElementById('content-area');
-                    contentArea.innerHTML = `
-                        <div class="test-container">
-                            <h2>Тест по теме: ${data.topicName}</h2>
-                            <form id="test-form">
-                                ${data.questions
-                                    .map(
-                                        (question, index) => `
-                                            <div class="test-question" id="question-${question.id}">
-                                                <p><strong>${index + 1}.</strong></p>
-                                                ${question.task_type === 'image'
-                                                    ? `<img src="data:image/png;base64,${question.task}"
-                                                        alt="Задание" style="max-width: 100%; height: auto;" />`
-                                                    : `<p>${question.task}</p>`
-                                                }
-                                                <input type="text" name="question_${question.id}"
-                                                       placeholder="Введите ваш ответ" />
-                                                <p class="feedback" style="display:none; font-weight:bold;"></p>
-                                            </div>
-                                        `
-                                    )
-                                    .join('')}
-                                <button type="button"
-                                   onclick="submitTest(${subjectId}, ${topicId})">Завершить тест</button>
-                            </form>
-                            <button id="retry-test" style="display:none;" onclick="loadTest(${subjectId},
-                               ${topicId})">Пройти еще раз</button>
-                        </div>
-                    `;
-                    backButton.style.display = 'flex'; // кнопка "Назад"
-                })
-                .catch(error => console.error('Ошибка загрузки теста:', error));
-        }
+function loadTest(subjectId, topicId) {
+    fetch(`/api/test?subject_id=${subjectId}&topic_id=${topicId}`)
+        .then(response => response.json())
+        .then(data => {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="test-container">
+                    <h2>Тест по теме: ${data.topicName}</h2>
+                    <form id="test-form">
+                        ${data.questions
+                            .map(
+                                (question, index) => `
+                                    <div class="test-question" id="question-${question.id}">
+                                        <p><strong>${index + 1}.</strong></p>
+                                        ${question.task_type === 'image'
+                                            ? `<img src="data:image/png;base64,${question.task}"
+                                                alt="Задание" style="max-width: 100%; height: auto;" />`
+                                            : `<p>${question.task}</p>`
+                                        }
+                                        <input type="text" name="question_${question.id}"
+                                               placeholder="Введите ваш ответ" />
+                                        <p class="feedback" style="display:none; font-weight:bold;"></p>
+                                    </div>
+                                `
+                            )
+                            .join('')}
+                        <button type="button" id="submit-test"
+                           onclick="submitTest(${subjectId}, ${topicId})">Завершить тест</button>
+                    </form>
+                    <button id="retry-test" style="display:none;" onclick="loadTest(${subjectId},
+                       ${topicId})">Пройти еще раз</button>
+                </div>
+            `;
+            backButton.style.display = 'flex'; // кнопка "Назад"
+        })
+        .catch(error => console.error('Ошибка загрузки теста:', error));
+}
 
+function submitTest(subjectId, topicId) {
+    const form = document.getElementById('test-form');
+    const formData = new FormData(form);
+    const answers = {};
 
-        function submitTest(subjectId, topicId) {
-            const form = document.getElementById('test-form');
-            const formData = new FormData(form);
-            const answers = {};
+    for (const [key, value] of formData.entries()) {
+        const questionId = key.split('_')[1];
+        answers[questionId] = value.trim();
+    }
 
-            for (const [key, value] of formData.entries()) {
-                const questionId = key.split('_')[1];
-                answers[questionId] = value.trim();
-            }
+    fetch('/api/submit_test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers, subjectId, topicId }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            data.results.forEach(result => {
+                const questionElement = document.getElementById(`question-${result.questionId}`);
+                if (questionElement) {
+                    const feedback = questionElement.querySelector('.feedback');
+                    feedback.style.display = 'block';
+                    feedback.textContent = result.isCorrect ?
+                        'Ответ верный' : `Ответ неверный. Правильный ответ: ${result.correctAnswer}`;
+                    feedback.style.color = result.isCorrect ? 'green' : 'red';
+                }
+            });
 
-            fetch('/api/submit_test', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answers, subjectId, topicId }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    data.results.forEach(result => {
-                        const questionElement = document.getElementById(`question-${result.questionId}`);
-                        if (questionElement) {
-                            const feedback = questionElement.querySelector('.feedback');
-                            feedback.style.display = 'block';
-                            feedback.textContent = result.isCorrect ?
-                                'Ответ верный' : `Ответ неверный. Правильный ответ: ${result.correctAnswer}`;
-                            feedback.style.color = result.isCorrect ? 'green' : 'red';
-                        }
-                    });
+            // Скрываем кнопку "Завершить тест"
+            const submitButton = document.getElementById('submit-test');
+            if (submitButton) submitButton.style.display = 'none';
 
-
+            // Показываем кнопку "Пройти еще раз"
+            document.getElementById('retry-test').style.display = 'block';
 
             const contentArea = document.getElementById('content-area');
             contentArea.innerHTML += `
@@ -583,10 +587,9 @@
                     <p>Правильных ответов: ${data.correctCount} из ${data.totalQuestions}</p>
                 </div>
             `;
-            document.getElementById('retry-test').style.display = 'block'; //  кнопка "Пройти еще раз"
         })
         .catch(error => console.error('Ошибка отправки теста:', error));
-        }
+}
 
 
         function loadQuestions(subjectId, topicId) {
