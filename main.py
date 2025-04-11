@@ -177,7 +177,7 @@ def submit_test():
     answers = data.get('answers', {})
     topic_id = data.get('topicId')
     subject_id = data.get('subjectId')
-    user_id = 1
+    user_id = flask_session['user_id']
 
     session = create_session()
     questions = session.query(Question).filter(Question.id.in_(answers.keys())).all()
